@@ -1,0 +1,16 @@
+{
+  "name": "node-translation-api",
+  "version": "1.0.0",
+  "description": "- To create a web server with a RESTful API to translate a text from one language to another, using `Google Cloud Translation` API\r - The source and target language should be definable via the API\r - To cache translations, in order to avoid repeated hits to the translation API",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/translate": "^6.3.1"
+  }
+}
