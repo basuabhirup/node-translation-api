@@ -13,24 +13,35 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
 
-async function quickStart() {
-  const text = "Good Night"; // The text to translate  
-  const target = "de"; // The target language
+async function quickStart(text, target) {
   // Translates some text into the target language
   const [translation] = await translate.translate(text, target);
   return {text, translation};
 }
 
-quickStart()
-  .then(result => console.log(result))
-  .catch(err => console.log(err));
+
 
 // Set API endpoints:
 
 // Handle 'GET' requests made on the '/' route:
 app.get('/', (req, res) => {  
-  res.json({text: "Welcome to Node Translation API"})
+  res
+  .status(200)
+  .json({
+    title: "Welcome to Node Translation API",
+    description: "Use the '/translate' route to translate any text."
+  })
 });
+
+// Handle 'POST' requests made on the '/translate' route:
+app.post('/translate', (req, res) => {
+  const text = req.body.text // "Good Night"; // The text to translate  
+  const target = req.body.target // "de"; // The target language
+  quickStart(text, target)
+  .then(result => res.status(200).json(result))
+  .catch(err => res.status(400).json(err))
+});
+
 
 
 // Set listener:
