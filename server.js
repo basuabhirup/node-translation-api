@@ -1,7 +1,7 @@
 // Requiring necessary NPM modules:
 const express = require("express");
 const { Translate } = require("@google-cloud/translate").v2; // Imports the Google Cloud client library
-const NodeCache = require( "node-cache" );
+const NodeCache = require( "node-cache");
 
 // Configure App:
 const app = express();
@@ -21,7 +21,26 @@ async function quickTranslate(text, target) {
   return {text, target, translation};
 }
 
+// Implementing Smart Pre-Caching:
+const smartPair = { // Etensive user research must be carried on to effectively define the smart pairs
+  "de": ["hi", "bn"],
+  "bn": ["hi", "or"],
+  "kn": ["hi", "ta"],
+  "fr": ["de", "es"],
+  "hi": ["bn", "kn"]
+}
 
+function smartPreCache(text, langArray) {
+  if (langArray === undefined) return;
+  return langArray.forEach(lang => {
+    quickTranslate(text, lang)
+    .then(result => {
+      console.log(`Also pre-caching into ${lang} language`);
+      myCache.set(`text=${text}, target=${lang}`, result)
+    })
+    .catch(err => res.status(400).json(err));
+  })
+}
 
 // Set API endpoints:
 
@@ -40,16 +59,17 @@ app.post('/translate', (req, res) => {
   const text = req.body.text // The text to translate  
   const target = req.body.target // The target language
   if (myCache.has(`text=${text}, target=${target}`)) {
-    console.log("getting data from cache");
+    console.log("Getting data from cache");
     return res.status(200).json(myCache.get(`text=${text}, target=${target}`));
   }
   quickTranslate(text, target)
   .then(result => {
-    myCache.set(`text=${text}, target=${target}`, result)
-    console.log("getting data from API");
-    res.status(200).json(result)
+    myCache.set(`text=${text}, target=${target}`, result);
+    console.log("Getting data from API and saving it to cache");
+    res.status(200).json(result);
+    smartPreCache(text, smartPair[target]);
   })
-  .catch(err => res.status(400).json(err))
+  .catch(err => res.status(400).json(err));
 });
 
 
