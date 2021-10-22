@@ -1,22 +1,24 @@
 // Requiring necessary NPM modules:
 const express = require("express");
 const { Translate } = require("@google-cloud/translate").v2; // Imports the Google Cloud client library
+const NodeCache = require( "node-cache" );
 
 // Configure App:
 const app = express();
 const port = process.env.PORT || 5000;
 const projectId = "node-translation-api";
 const translate = new Translate({projectId}); // Instantiates a client
+const myCache = new NodeCache();
 
 // Set Middlewares:
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
 
-async function quickStart(text, target) {
+async function quickTranslate(text, target) {
   // Translates some text into the target language
   const [translation] = await translate.translate(text, target);
-  return {text, translation};
+  return {text, target, translation};
 }
 
 
@@ -29,16 +31,24 @@ app.get('/', (req, res) => {
   .status(200)
   .json({
     title: "Welcome to Node Translation API",
-    description: "Use the '/translate' route to translate any text."
+    description: "Submit a POST request on the '/translate' route. The request must contain a 'text' field and a 'target' field in its body. The Google Cloud Translation API behind the scenes is smart enough to detect the language of the submitted text. You must mention ISO-639-1 Code of the 'target' language (Reference: https://cloud.google.com/translate/docs/languages) to specifically mention the language into which you want to translate the submitted text."
   })
 });
 
 // Handle 'POST' requests made on the '/translate' route:
 app.post('/translate', (req, res) => {
-  const text = req.body.text // "Good Night"; // The text to translate  
-  const target = req.body.target // "de"; // The target language
-  quickStart(text, target)
-  .then(result => res.status(200).json(result))
+  const text = req.body.text // The text to translate  
+  const target = req.body.target // The target language
+  if (myCache.has("translation") && myCache.get("translation")["text"] === text && myCache.get("translation")["target"] === target) {
+    console.log("getting data from cache");
+    return res.status(200).json(myCache.get("translation"));
+  }
+  quickTranslate(text, target)
+  .then(result => {
+    myCache.set("translation", result)
+    console.log("getting data from API");
+    res.status(200).json(result)
+  })
   .catch(err => res.status(400).json(err))
 });
 
