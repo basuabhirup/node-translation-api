@@ -39,13 +39,13 @@ app.get('/', (req, res) => {
 app.post('/translate', (req, res) => {
   const text = req.body.text // The text to translate  
   const target = req.body.target // The target language
-  if (myCache.has("translation") && myCache.get("translation")["text"] === text && myCache.get("translation")["target"] === target) {
+  if (myCache.has(`text=${text}, target=${target}`)) {
     console.log("getting data from cache");
-    return res.status(200).json(myCache.get("translation"));
+    return res.status(200).json(myCache.get(`text=${text}, target=${target}`));
   }
   quickTranslate(text, target)
   .then(result => {
-    myCache.set("translation", result)
+    myCache.set(`text=${text}, target=${target}`, result)
     console.log("getting data from API");
     res.status(200).json(result)
   })
